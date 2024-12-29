@@ -3,33 +3,35 @@ name: Build Kivy APK
 on:
   push:
     branches:
-      - main  # Triggers when you push to the 'main' branch
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Install Buildozer and its dependencies
-      - name: Set up Buildozer
+      - name: Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y python3-pip openjdk-11-jdk git zip unzip
           pip install buildozer
           pip install cython==0.29.36
 
-      # Step 3: Build the APK
+      - name: Accept Android Licenses
+        run: |
+          mkdir -p ~/.android && touch ~/.android/repositories.cfg
+          yes | sdkmanager --licenses || true
+          sdkmanager "build-tools;36.0.0-rc3"
+
       - name: Build APK
         run: |
-          buildozer android debug
-          ls -la ./bin  # List APK files in the 'bin' folder
+          buildozer -v android debug
 
-      # Step 4: Upload the APK as an artifact
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v3
         with:
           name: PolygonAreaCalc
